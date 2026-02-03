@@ -157,16 +157,31 @@
     </div>
 
     <script>
-        // Set your target date here (format: 'YYYY-MM-DDTHH:MM:SS' or use Date object)
-        // Example: countdown to a specific date
-        const TARGET_DATE = new Date('2025-12-11T14:59:00-08:00');
+        const DEFAULT_TARGET_DATE = new Date('2026-02-10T11:59:59Z');
+        let targetDate = DEFAULT_TARGET_DATE;
 
-        // Or set hours from now:
-        // const TARGET_DATE = new Date(Date.now() + 50 * 60 * 60 * 1000); // 50 hours from now
+        async function loadTargetDate() {
+            try {
+                const response = await fetch('time.txt', { cache: 'no-store' });
+                if (!response.ok) {
+                    return;
+                }
+                const text = (await response.text()).trim();
+                if (!text) {
+                    return;
+                }
+                const parsed = new Date(text);
+                if (!Number.isNaN(parsed.getTime())) {
+                    targetDate = parsed;
+                }
+            } catch (error) {
+                // Keep default target date if loading fails.
+            }
+        }
 
         function updateTimer() {
             const now = new Date();
-            const diff = TARGET_DATE - now;
+            const diff = targetDate - now;
 
             if (diff <= 0) {
                 document.getElementById('hours').textContent = '00';
@@ -202,9 +217,11 @@
             });
         }
 
-        // Update immediately and then every second
-        updateTimer();
-        setInterval(updateTimer, 1000);
+        // Load config, then start the timer
+        loadTargetDate().finally(() => {
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        });
     </script>
 </body>
 </html>
